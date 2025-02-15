@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kart Racer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: white;
+            text-align: center;
+            margin: 0;
+            overflow: hidden;
+        }
+        h1 {
+            margin: 10px;
+        }
+        canvas {
+            background: gray;
+            border: 3px solid white;
+        }
+        #controls {
+            margin-top: 10px;
+        }
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+        }
+        .button {
+            background: darkorange;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            margin: 5px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .button:active {
+            background: orangered;
+        }
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Kart Racer 🏎️</h1>
+    <p>Use Arrow Keys or Tap Buttons to Drive</p>
+    
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="controls">
+        <p>Lap: <span id="lapCount">0</span> / 3</p>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div class="mobile-controls">
+        <button class="button" id="leftBtn">←</button>
+        <button class="button" id="rightBtn">→</button>
+        <button class="button" id="accelerateBtn">↑</button>
+        <button class="button" id="brakeBtn">↓</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 800;
+        canvas.height = 600;
+
+        let trackRadius = 250;
+        let player = { x: 400, y: 300, angle: 0, speed: 0, lap: 0 };
+        let ai = { x: 380, y: 320, angle: 0, speed: 1.5 };
+        let keys = {};
+
+        function drawTrack() {
+            ctx.fillStyle = "green";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "gray";
+            ctx.beginPath();
+            ctx.arc(400, 300, trackRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+
+        function drawCar(car, color) {
+            ctx.save();
+            ctx.translate(car.x, car.y);
+            ctx.rotate(car.angle);
+            ctx.fillStyle = color;
+            ctx.fillRect(-10, -20, 20, 40);
+            ctx.restore();
+        }
+
+        function updateCar(car, isPlayer = false) {
+            if (isPlayer) {
+                if (keys["ArrowUp"] || keys["mobileUp"]) car.speed = Math.min(car.speed + 0.1, 4);
+                if (keys["ArrowDown"] || keys["mobileDown"]) car.speed = Math.max(car.speed - 0.1, -2);
+                if (keys["ArrowLeft"] || keys["mobileLeft"]) car.angle -= 0.05 * car.speed;
+                if (keys["ArrowRight"] || keys["mobileRight"]) car.angle += 0.05 * car.speed;
+            } else {
+                car.angle += 0.02;
+                car.speed = 1.5;
+            }
+
+            car.x += Math.cos(car.angle) * car.speed;
+            car.y += Math.sin(car.angle) * car.speed;
+
+            let distFromCenter = Math.hypot(car.x - 400, car.y - 300);
+            if (distFromCenter > trackRadius + 20) {
+                car.speed *= -0.5;
+            }
+
+            if (isPlayer && distFromCenter < trackRadius - 20) {
+                car.speed *= -0.5;
+            }
+
+            if (isPlayer && distFromCenter > trackRadius - 10 && distFromCenter < trackRadius + 10) {
+                car.lap++;
+                document.getElementById("lapCount").innerText = car.lap;
+                if (car.lap >= 3) {
+                    alert("🏆 You Won the Race! 🏁");
+                    car.lap = 0;
+                }
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawTrack();
+            updateCar(player, true);
+            updateCar(ai, false);
+            drawCar(player, "red");
+            drawCar(ai, "blue");
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener("keydown", (e) => keys[e.key] = true);
+        document.addEventListener("keyup", (e) => keys[e.key] = false);
+
+        // Mobile Controls
+        document.getElementById("leftBtn").addEventListener("touchstart", () => keys["mobileLeft"] = true);
+        document.getElementById("leftBtn").addEventListener("touchend", () => keys["mobileLeft"] = false);
+
+        document.getElementById("rightBtn").addEventListener("touchstart", () => keys["mobileRight"] = true);
+        document.getElementById("rightBtn").addEventListener("touchend", () => keys["mobileRight"] = false);
+
+        document.getElementById("accelerateBtn").addEventListener("touchstart", () => keys["mobileUp"] = true);
+        document.getElementById("accelerateBtn").addEventListener("touchend", () => keys["mobileUp"] = false);
+
+        document.getElementById("brakeBtn").addEventListener("touchstart", () => keys["mobileDown"] = true);
+        document.getElementById("brakeBtn").addEventListener("touchend", () => keys["mobileDown"] = false);
+
+        gameLoop();
+    </script>
+</body>
+</html>
