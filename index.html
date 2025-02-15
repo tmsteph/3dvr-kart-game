@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D Kart Racer - Fixed Black Screen</title>
+  <title>3D Kart Racer - Added Perspective Pillars</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     body { margin: 0; overflow: hidden; background: black; }
@@ -69,6 +69,9 @@
       // Create track
       createTrack();
 
+      // Add pillars for perspective
+      createPillars();
+
       // Handle Window Resize
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -94,6 +97,22 @@
       track.rotation.x = -Math.PI / 2;
       track.position.set(0, 0.01, 0); // Ensure it's above grass
       scene.add(track);
+    }
+
+    function createPillars() {
+      const pillarGeometry = new THREE.BoxGeometry(2, 8, 2); // Tall, narrow pillars
+      const pillarMaterial = new THREE.MeshBasicMaterial({ color: 0x555555 });
+
+      // Place pillars along the track edges for depth
+      for (let i = -4; i <= 4; i++) {
+        for (let j = -5; j <= 5; j++) {
+          let pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+          let offsetX = i * 20; // Spread out across the width
+          let offsetZ = j * 40; // Spaced along the track
+          pillar.position.set(offsetX, 4, offsetZ); // Height 4 so it stands tall
+          scene.add(pillar);
+        }
+      }
     }
 
     function animate() {
