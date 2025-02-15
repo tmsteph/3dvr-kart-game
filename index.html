@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D Kart Racer - Custom Track</title>
+  <title>3D Kart Racer - Proper Track</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     body { margin: 0; overflow: hidden; background: black; }
@@ -40,6 +40,7 @@
   <script>
     let scene, camera, renderer, kart, speed = 0, maxSpeed = 1.5, acceleration = 0.07;
     let trackPath = []; // Stores track waypoints
+    let roadSegments = []; // Stores track segments
     let keys = {};
 
     function init() {
@@ -86,7 +87,7 @@
       grass.rotation.x = -Math.PI / 2;
       scene.add(grass);
 
-      // Custom racetrack shape
+      // Custom racetrack shape (with more detail)
       trackPath = [
         { x: -50, z: -40 }, { x: -30, z: -60 }, { x: 0, z: -70 }, { x: 30, z: -60 },
         { x: 50, z: -40 }, { x: 60, z: 0 }, { x: 50, z: 40 }, { x: 30, z: 60 },
@@ -103,6 +104,7 @@
         road.position.set((trackPath[i].x + next.x) / 2, 0.01, (trackPath[i].z + next.z) / 2);
         road.lookAt(next.x, 0, next.z);
         scene.add(road);
+        roadSegments.push({ x: road.position.x, z: road.position.z });
       }
 
       // Walls around the track
@@ -130,9 +132,10 @@
       let newZ = kart.position.z - Math.cos(kart.rotation.y) * speed;
 
       // Collision detection: Stay within track boundaries
-      let closestDistance = Math.min(...trackPath.map(p => Math.hypot(newX - p.x, newZ - p.z)));
-      if (closestDistance > 25) {
-        speed *= -0.5; // Stop kart from leaving track
+      let onTrack = roadSegments.some(segment => Math.hypot(newX - segment.x, newZ - segment.z) < 15);
+
+      if (!onTrack) {
+        speed *= -0.3; // Slow the kart down if off the track
       } else {
         kart.position.x = newX;
         kart.position.z = newZ;
