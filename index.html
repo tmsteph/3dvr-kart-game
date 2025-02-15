@@ -83,11 +83,10 @@
             y: canvas.height / 2, 
             angle: 0, 
             speed: 0, 
-            maxSpeed: 6, // 🚀 Increased max speed
-            acceleration: 0.2, // ⚡ Faster acceleration
+            maxSpeed: 6, 
+            acceleration: 0.2, 
             lap: 0
         };
-        let ai = { x: canvas.width / 2 - 20, y: canvas.height / 2 + 20, angle: 0, speed: 1.5 };
         let keys = {};
 
         function drawTrack() {
@@ -102,39 +101,22 @@
             ctx.stroke();
         }
 
-        function updateCar(car, isPlayer = false) {
-            if (isPlayer) {
-                if (keys["ArrowUp"] || keys["mobileUp"]) {
-                    car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
-                } else {
-                    car.speed *= 0.98; // Natural deceleration
-                }
-                if (keys["ArrowDown"] || keys["mobileDown"]) car.speed = Math.max(car.speed - 0.1, -2);
-                if (keys["ArrowLeft"] || keys["mobileLeft"]) car.angle -= 0.05 * car.speed;
-                if (keys["ArrowRight"] || keys["mobileRight"]) car.angle += 0.05 * car.speed;
+        function updateCar() {
+            if (keys["ArrowUp"] || keys["mobileUp"]) {
+                player.speed = Math.min(player.speed + player.acceleration, player.maxSpeed);
             } else {
-                car.angle += 0.02;
-                car.speed = 1.5;
+                player.speed *= 0.98; // Natural deceleration
             }
+            if (keys["ArrowDown"] || keys["mobileDown"]) player.speed = Math.max(player.speed - 0.2, -2);
+            if (keys["ArrowLeft"] || keys["mobileLeft"]) player.angle -= 0.05 * player.speed;
+            if (keys["ArrowRight"] || keys["mobileRight"]) player.angle += 0.05 * player.speed;
 
-            car.x += Math.cos(car.angle) * car.speed;
-            car.y += Math.sin(car.angle) * car.speed;
+            player.x += Math.cos(player.angle) * player.speed;
+            player.y += Math.sin(player.angle) * player.speed;
 
-            let distFromCenter = Math.hypot(car.x - canvas.width / 2, car.y - canvas.height / 2);
-            if (distFromCenter > trackRadius + 20) {
-                car.speed *= -0.5;
-            }
-
-            if (isPlayer && distFromCenter < trackRadius - 20) {
-                car.speed *= -0.5;
-            }
-
-            if (isPlayer && distFromCenter > trackRadius - 10 && distFromCenter < trackRadius + 10) {
-                car.lap++;
-                if (car.lap >= 3) {
-                    alert("🏆 You Won the Race! 🏁");
-                    car.lap = 0;
-                }
+            let distFromCenter = Math.hypot(player.x - canvas.width / 2, player.y - canvas.height / 2);
+            if (distFromCenter > trackRadius + 20 || distFromCenter < trackRadius - 20) {
+                player.speed *= -0.5;
             }
         }
 
@@ -142,25 +124,24 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawTrack();
 
-            let fov = 200; // Field of view distance
+            let fov = 200; 
             let dx = Math.cos(player.angle) * fov;
             let dy = Math.sin(player.angle) * fov;
 
             ctx.fillStyle = "black";
             ctx.beginPath();
-            ctx.moveTo(player.x, player.y);
-            ctx.lineTo(player.x + dx - 50, player.y + dy);
-            ctx.lineTo(player.x + dx + 50, player.y + dy);
+            ctx.moveTo(canvas.width / 2, canvas.height * 0.8);
+            ctx.lineTo(canvas.width / 2 + dx - 50, canvas.height / 2 + dy);
+            ctx.lineTo(canvas.width / 2 + dx + 50, canvas.height / 2 + dy);
             ctx.closePath();
             ctx.fill();
 
             ctx.fillStyle = "red";
-            ctx.fillRect(canvas.width / 2 - 5, canvas.height * 0.8, 10, 20); // Simulated dashboard
+            ctx.fillRect(canvas.width / 2 - 5, canvas.height * 0.85, 10, 20);
         }
 
         function gameLoop() {
-            updateCar(player, true);
-            updateCar(ai, false);
+            updateCar();
             drawFirstPersonView();
             requestAnimationFrame(gameLoop);
         }
