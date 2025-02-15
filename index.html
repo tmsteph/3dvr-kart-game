@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Kart Racer</title>
+    <title>Kart Racer (First-Person)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,16 +18,11 @@
             font-size: 5vw;
         }
         canvas {
-            background: gray;
             display: block;
-            width: 90vw;
-            height: 60vh;
-            margin: auto;
+            width: 100vw;
+            height: 70vh;
+            background-color: gray;
             border: 3px solid white;
-        }
-        #controls {
-            margin-top: 5px;
-            font-size: 4vw;
         }
         .mobile-controls {
             display: flex;
@@ -58,14 +53,10 @@
     </style>
 </head>
 <body>
-    <h1>Kart Racer 🏎️</h1>
+    <h1>Kart Racer 🏎️ (First-Person)</h1>
     <p>Use Arrow Keys or Tap Buttons to Drive</p>
     
     <canvas id="gameCanvas"></canvas>
-
-    <div id="controls">
-        <p>Lap: <span id="lapCount">0</span> / 3</p>
-    </div>
 
     <!-- Mobile Controls -->
     <div class="mobile-controls">
@@ -80,14 +71,22 @@
         const ctx = canvas.getContext("2d");
 
         function resizeCanvas() {
-            canvas.width = window.innerWidth * 0.9;
-            canvas.height = window.innerHeight * 0.6;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight * 0.7;
         }
         resizeCanvas();
         window.addEventListener("resize", resizeCanvas);
 
         let trackRadius = canvas.width / 3;
-        let player = { x: canvas.width / 2, y: canvas.height / 2, angle: 0, speed: 0, lap: 0 };
+        let player = {
+            x: canvas.width / 2, 
+            y: canvas.height / 2, 
+            angle: 0, 
+            speed: 0, 
+            maxSpeed: 6, // 🚀 Increased max speed
+            acceleration: 0.2, // ⚡ Faster acceleration
+            lap: 0
+        };
         let ai = { x: canvas.width / 2 - 20, y: canvas.height / 2 + 20, angle: 0, speed: 1.5 };
         let keys = {};
 
@@ -103,18 +102,13 @@
             ctx.stroke();
         }
 
-        function drawCar(car, color) {
-            ctx.save();
-            ctx.translate(car.x, car.y);
-            ctx.rotate(car.angle);
-            ctx.fillStyle = color;
-            ctx.fillRect(-10, -20, 20, 40);
-            ctx.restore();
-        }
-
         function updateCar(car, isPlayer = false) {
             if (isPlayer) {
-                if (keys["ArrowUp"] || keys["mobileUp"]) car.speed = Math.min(car.speed + 0.1, 4);
+                if (keys["ArrowUp"] || keys["mobileUp"]) {
+                    car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
+                } else {
+                    car.speed *= 0.98; // Natural deceleration
+                }
                 if (keys["ArrowDown"] || keys["mobileDown"]) car.speed = Math.max(car.speed - 0.1, -2);
                 if (keys["ArrowLeft"] || keys["mobileLeft"]) car.angle -= 0.05 * car.speed;
                 if (keys["ArrowRight"] || keys["mobileRight"]) car.angle += 0.05 * car.speed;
@@ -137,7 +131,6 @@
 
             if (isPlayer && distFromCenter > trackRadius - 10 && distFromCenter < trackRadius + 10) {
                 car.lap++;
-                document.getElementById("lapCount").innerText = car.lap;
                 if (car.lap >= 3) {
                     alert("🏆 You Won the Race! 🏁");
                     car.lap = 0;
@@ -145,13 +138,30 @@
             }
         }
 
-        function gameLoop() {
+        function drawFirstPersonView() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawTrack();
+
+            let fov = 200; // Field of view distance
+            let dx = Math.cos(player.angle) * fov;
+            let dy = Math.sin(player.angle) * fov;
+
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
+            ctx.lineTo(player.x + dx - 50, player.y + dy);
+            ctx.lineTo(player.x + dx + 50, player.y + dy);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "red";
+            ctx.fillRect(canvas.width / 2 - 5, canvas.height * 0.8, 10, 20); // Simulated dashboard
+        }
+
+        function gameLoop() {
             updateCar(player, true);
             updateCar(ai, false);
-            drawCar(player, "red");
-            drawCar(ai, "blue");
+            drawFirstPersonView();
             requestAnimationFrame(gameLoop);
         }
 
