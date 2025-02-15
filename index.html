@@ -1,168 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Kart Racer (First-Person)</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: black;
-            color: white;
-            text-align: center;
-            margin: 0;
-            overflow: hidden;
-        }
-        h1 {
-            margin: 10px;
-            font-size: 5vw;
-        }
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 70vh;
-            background-color: gray;
-            border: 3px solid white;
-        }
-        .mobile-controls {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            position: fixed;
-            bottom: 10px;
-            width: 100%;
-        }
-        .button {
-            background: darkorange;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 4vw;
-            border-radius: 5px;
-            cursor: pointer;
-            flex: 1;
-        }
-        .button:active {
-            background: orangered;
-        }
-        @media (min-width: 768px) {
-            .mobile-controls {
-                display: none;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Kart Racer - Top-Down</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: black;
+      color: white;
+      text-align: center;
+      margin: 0;
+      overflow: hidden;
+    }
+    h1 {
+      margin: 10px;
+      font-size: 5vw;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 70vh;
+      background: gray;
+      border: 3px solid white;
+      margin: auto;
+    }
+    .mobile-controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      position: fixed;
+      bottom: 10px;
+      width: 100%;
+    }
+    .button {
+      background: darkorange;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 4vw;
+      border-radius: 5px;
+      cursor: pointer;
+      flex: 1;
+    }
+    .button:active {
+      background: orangered;
+    }
+    @media (min-width: 768px) {
+      .mobile-controls {
+        display: none;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Kart Racer 🏎️ (First-Person)</h1>
-    <p>Use Arrow Keys or Tap Buttons to Drive</p>
-    
-    <canvas id="gameCanvas"></canvas>
+  <h1>Kart Racer 🏎️</h1>
+  <canvas id="gameCanvas"></canvas>
 
-    <!-- Mobile Controls -->
-    <div class="mobile-controls">
-        <button class="button" id="leftBtn">←</button>
-        <button class="button" id="accelerateBtn">↑</button>
-        <button class="button" id="brakeBtn">↓</button>
-        <button class="button" id="rightBtn">→</button>
-    </div>
+  <!-- Mobile Controls -->
+  <div class="mobile-controls">
+    <button class="button" id="leftBtn">←</button>
+    <button class="button" id="accelerateBtn">↑</button>
+    <button class="button" id="brakeBtn">↓</button>
+    <button class="button" id="rightBtn">→</button>
+  </div>
 
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight * 0.7;
+    // Resize canvas responsively.
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight * 0.7;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // Define track properties
+    let centerX = canvas.width / 2;
+    let centerY = canvas.height / 2;
+    let trackRadius = canvas.width / 3;
+
+    // Player kart (red)
+    let player = {
+      x: centerX,
+      y: centerY + trackRadius - 30,
+      angle: -Math.PI / 2, // Facing upward.
+      speed: 0,
+      acceleration: 0.2,
+      maxSpeed: 6,
+    };
+
+    // AI kart (blue)
+    let ai = {
+      x: centerX + 30,
+      y: centerY + trackRadius - 30,
+      angle: -Math.PI / 2,
+      speed: 2,
+    };
+
+    let keys = {};
+
+    function drawTrack() {
+      ctx.fillStyle = "green";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "gray";
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, trackRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 5;
+      ctx.stroke();
+    }
+
+    function drawCar(car, color) {
+      ctx.save();
+      ctx.translate(car.x, car.y);
+      ctx.rotate(car.angle);
+      ctx.fillStyle = color;
+      ctx.fillRect(-10, -20, 20, 40);
+      ctx.restore();
+    }
+
+    function updateCar(car, isPlayer = false) {
+      if (isPlayer) {
+        if (keys["ArrowUp"] || keys["mobileUp"]) {
+          car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
+        } else {
+          car.speed *= 0.98;
         }
-        resizeCanvas();
-        window.addEventListener("resize", resizeCanvas);
-
-        let trackRadius = canvas.width / 3;
-        let player = {
-            x: canvas.width / 2, 
-            y: canvas.height / 2, 
-            angle: 0, 
-            speed: 0, 
-            maxSpeed: 6, 
-            acceleration: 0.2, 
-            lap: 0
-        };
-        let keys = {};
-
-        function drawTrack() {
-            ctx.fillStyle = "green";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "gray";
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, trackRadius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 5;
-            ctx.stroke();
+        if (keys["ArrowDown"] || keys["mobileDown"]) {
+          car.speed = Math.max(car.speed - 0.2, -2);
         }
-
-        function updateCar() {
-            if (keys["ArrowUp"] || keys["mobileUp"]) {
-                player.speed = Math.min(player.speed + player.acceleration, player.maxSpeed);
-            } else {
-                player.speed *= 0.98; // Natural deceleration
-            }
-            if (keys["ArrowDown"] || keys["mobileDown"]) player.speed = Math.max(player.speed - 0.2, -2);
-            if (keys["ArrowLeft"] || keys["mobileLeft"]) player.angle -= 0.05 * player.speed;
-            if (keys["ArrowRight"] || keys["mobileRight"]) player.angle += 0.05 * player.speed;
-
-            player.x += Math.cos(player.angle) * player.speed;
-            player.y += Math.sin(player.angle) * player.speed;
-
-            let distFromCenter = Math.hypot(player.x - canvas.width / 2, player.y - canvas.height / 2);
-            if (distFromCenter > trackRadius + 20 || distFromCenter < trackRadius - 20) {
-                player.speed *= -0.5;
-            }
+        if (keys["ArrowLeft"] || keys["mobileLeft"]) {
+          car.angle -= 0.05;
         }
-
-        function drawFirstPersonView() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawTrack();
-
-            let fov = 200; 
-            let dx = Math.cos(player.angle) * fov;
-            let dy = Math.sin(player.angle) * fov;
-
-            ctx.fillStyle = "black";
-            ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, canvas.height * 0.8);
-            ctx.lineTo(canvas.width / 2 + dx - 50, canvas.height / 2 + dy);
-            ctx.lineTo(canvas.width / 2 + dx + 50, canvas.height / 2 + dy);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.fillStyle = "red";
-            ctx.fillRect(canvas.width / 2 - 5, canvas.height * 0.85, 10, 20);
+        if (keys["ArrowRight"] || keys["mobileRight"]) {
+          car.angle += 0.05;
         }
+      } else {
+        car.angle += 0.01;
+      }
 
-        function gameLoop() {
-            updateCar();
-            drawFirstPersonView();
-            requestAnimationFrame(gameLoop);
-        }
+      car.x += Math.cos(car.angle) * car.speed;
+      car.y += Math.sin(car.angle) * car.speed;
 
-        document.addEventListener("keydown", (e) => keys[e.key] = true);
-        document.addEventListener("keyup", (e) => keys[e.key] = false);
+      let dx = car.x - centerX;
+      let dy = car.y - centerY;
+      let distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
 
-        // Mobile Controls
-        document.getElementById("leftBtn").addEventListener("touchstart", () => keys["mobileLeft"] = true);
-        document.getElementById("leftBtn").addEventListener("touchend", () => keys["mobileLeft"] = false);
+      if (distanceFromCenter > trackRadius + 10 || distanceFromCenter < trackRadius - 10) {
+        car.speed *= -0.5;
+      }
+    }
 
-        document.getElementById("rightBtn").addEventListener("touchstart", () => keys["mobileRight"] = true);
-        document.getElementById("rightBtn").addEventListener("touchend", () => keys["mobileRight"] = false);
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawTrack();
+      updateCar(player, true);
+      updateCar(ai, false);
+      drawCar(player, "red");
+      drawCar(ai, "blue");
+      requestAnimationFrame(gameLoop);
+    }
 
-        document.getElementById("accelerateBtn").addEventListener("touchstart", () => keys["mobileUp"] = true);
-        document.getElementById("accelerateBtn").addEventListener("touchend", () => keys["mobileUp"] = false);
+    // Keyboard controls
+    document.addEventListener("keydown", (e) => (keys[e.key] = true));
+    document.addEventListener("keyup", (e) => (keys[e.key] = false));
 
-        document.getElementById("brakeBtn").addEventListener("touchstart", () => keys["mobileDown"] = true);
-        document.getElementById("brakeBtn").addEventListener("touchend", () => keys["mobileDown"] = false);
+    // Mobile controls
+    document.getElementById("leftBtn").addEventListener("touchstart", () => (keys["mobileLeft"] = true));
+    document.getElementById("leftBtn").addEventListener("touchend", () => (keys["mobileLeft"] = false));
+    document.getElementById("rightBtn").addEventListener("touchstart", () => (keys["mobileRight"] = true));
+    document.getElementById("rightBtn").addEventListener("touchend", () => (keys["mobileRight"] = false));
+    document.getElementById("accelerateBtn").addEventListener("touchstart", () => (keys["mobileUp"] = true));
+    document.getElementById("accelerateBtn").addEventListener("touchend", () => (keys["mobileUp"] = false));
+    document.getElementById("brakeBtn").addEventListener("touchstart", () => (keys["mobileDown"] = true));
+    document.getElementById("brakeBtn").addEventListener("touchend", () => (keys["mobileDown"] = false));
 
-        gameLoop();
-    </script>
+    gameLoop();
+  </script>
 </body>
 </html>
