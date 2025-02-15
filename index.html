@@ -38,7 +38,7 @@
   </div>
 
   <script>
-    let scene, camera, renderer, kart, speed = 0, maxSpeed = 0.8, acceleration = 0.02;
+    let scene, camera, renderer, kart, speed = 0, maxSpeed = 1, acceleration = 0.05;
     let keys = {};
 
     function init() {
@@ -59,12 +59,12 @@
       let kartGeometry = new THREE.BoxGeometry(1, 0.5, 2);
       let kartMaterial = new THREE.MeshBasicMaterial({ visible: false });
       kart = new THREE.Mesh(kartGeometry, kartMaterial);
-      kart.position.y = 0.3;
+      kart.position.set(0, 0.3, -30); // Start on track
       scene.add(kart);
       kart.add(camera);
       camera.position.set(0, 0.5, 0.2); // Camera inside the kart
 
-      // Create a better track
+      // Create a larger track
       createTrack();
 
       // Handle Window Resize
@@ -79,32 +79,32 @@
 
     function createTrack() {
       // Grass
-      const grassGeometry = new THREE.PlaneGeometry(50, 50);
+      const grassGeometry = new THREE.PlaneGeometry(200, 200);
       const grassMaterial = new THREE.MeshBasicMaterial({ color: 0x008000, side: THREE.DoubleSide });
       let grass = new THREE.Mesh(grassGeometry, grassMaterial);
       grass.rotation.x = -Math.PI / 2;
       scene.add(grass);
 
-      // Road (Loop track)
-      const roadGeometry = new THREE.TorusGeometry(10, 2, 16, 100);
+      // Road (Much bigger track)
+      const roadGeometry = new THREE.TorusGeometry(40, 5, 16, 100);
       const roadMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
       let road = new THREE.Mesh(roadGeometry, roadMaterial);
       road.rotation.x = -Math.PI / 2;
       scene.add(road);
 
       // Curbs
-      const curbGeometry = new THREE.TorusGeometry(10.5, 0.3, 16, 100);
+      const curbGeometry = new THREE.TorusGeometry(42, 0.6, 16, 100);
       const curbMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
       let curb = new THREE.Mesh(curbGeometry, curbMaterial);
       curb.rotation.x = -Math.PI / 2;
       scene.add(curb);
 
-      // Walls
+      // Walls around the track
       const wallMaterial = new THREE.MeshBasicMaterial({ color: 0x666666 });
-      for (let i = 0; i < 10; i++) {
-        let angle = (i / 10) * Math.PI * 2;
-        let wall = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 2), wallMaterial);
-        wall.position.set(Math.cos(angle) * 11, 0.5, Math.sin(angle) * 11);
+      for (let i = 0; i < 20; i++) {
+        let angle = (i / 20) * Math.PI * 2;
+        let wall = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 4), wallMaterial);
+        wall.position.set(Math.cos(angle) * 45, 1, Math.sin(angle) * 45);
         scene.add(wall);
       }
     }
@@ -120,8 +120,9 @@
       if (keys["ArrowLeft"] || keys["mobileLeft"]) kart.rotation.y += 0.04;
       if (keys["ArrowRight"] || keys["mobileRight"]) kart.rotation.y -= 0.04;
 
-      kart.position.x += Math.sin(kart.rotation.y) * speed;
-      kart.position.z += Math.cos(kart.rotation.y) * speed;
+      // Move forward based on rotation
+      kart.position.x -= Math.sin(kart.rotation.y) * speed;
+      kart.position.z -= Math.cos(kart.rotation.y) * speed;
 
       renderer.render(scene, camera);
     }
