@@ -15,38 +15,44 @@
         }
         h1 {
             margin: 10px;
+            font-size: 5vw;
         }
         canvas {
             background: gray;
+            display: block;
+            width: 90vw;
+            height: 60vh;
+            margin: auto;
             border: 3px solid white;
         }
         #controls {
-            margin-top: 10px;
+            margin-top: 5px;
+            font-size: 4vw;
         }
         .mobile-controls {
-            display: none;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
             position: fixed;
             bottom: 10px;
             width: 100%;
-            text-align: center;
         }
         .button {
             background: darkorange;
             color: white;
             border: none;
-            padding: 15px 20px;
-            margin: 5px;
-            font-size: 18px;
+            padding: 12px;
+            font-size: 4vw;
             border-radius: 5px;
             cursor: pointer;
-            display: inline-block;
+            flex: 1;
         }
         .button:active {
             background: orangered;
         }
-        @media (max-width: 768px) {
+        @media (min-width: 768px) {
             .mobile-controls {
-                display: block;
+                display: none;
             }
         }
     </style>
@@ -64,20 +70,25 @@
     <!-- Mobile Controls -->
     <div class="mobile-controls">
         <button class="button" id="leftBtn">←</button>
-        <button class="button" id="rightBtn">→</button>
         <button class="button" id="accelerateBtn">↑</button>
         <button class="button" id="brakeBtn">↓</button>
+        <button class="button" id="rightBtn">→</button>
     </div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        canvas.width = 800;
-        canvas.height = 600;
 
-        let trackRadius = 250;
-        let player = { x: 400, y: 300, angle: 0, speed: 0, lap: 0 };
-        let ai = { x: 380, y: 320, angle: 0, speed: 1.5 };
+        function resizeCanvas() {
+            canvas.width = window.innerWidth * 0.9;
+            canvas.height = window.innerHeight * 0.6;
+        }
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+
+        let trackRadius = canvas.width / 3;
+        let player = { x: canvas.width / 2, y: canvas.height / 2, angle: 0, speed: 0, lap: 0 };
+        let ai = { x: canvas.width / 2 - 20, y: canvas.height / 2 + 20, angle: 0, speed: 1.5 };
         let keys = {};
 
         function drawTrack() {
@@ -85,7 +96,7 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "gray";
             ctx.beginPath();
-            ctx.arc(400, 300, trackRadius, 0, Math.PI * 2);
+            ctx.arc(canvas.width / 2, canvas.height / 2, trackRadius, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = "white";
             ctx.lineWidth = 5;
@@ -115,7 +126,7 @@
             car.x += Math.cos(car.angle) * car.speed;
             car.y += Math.sin(car.angle) * car.speed;
 
-            let distFromCenter = Math.hypot(car.x - 400, car.y - 300);
+            let distFromCenter = Math.hypot(car.x - canvas.width / 2, car.y - canvas.height / 2);
             if (distFromCenter > trackRadius + 20) {
                 car.speed *= -0.5;
             }
