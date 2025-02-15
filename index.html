@@ -3,14 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D First-Person Kart Racer</title>
+  <title>3D Kart Racer - First Person</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: black;
-    }
+    body { margin: 0; overflow: hidden; background: black; }
     .mobile-controls {
       display: flex;
       justify-content: center;
@@ -29,14 +25,8 @@
       cursor: pointer;
       flex: 1;
     }
-    .button:active {
-      background: orangered;
-    }
-    @media (min-width: 768px) {
-      .mobile-controls {
-        display: none;
-      }
-    }
+    .button:active { background: orangered; }
+    @media (min-width: 768px) { .mobile-controls { display: none; } }
   </style>
 </head>
 <body>
@@ -48,40 +38,34 @@
   </div>
 
   <script>
-    let scene, camera, renderer;
-    let kart, track;
-    let speed = 0, maxSpeed = 0.5, acceleration = 0.02;
+    let scene, camera, renderer, kart, speed = 0, maxSpeed = 0.8, acceleration = 0.02;
     let keys = {};
-    
+
     function init() {
       scene = new THREE.Scene();
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // Kart (Invisible Box for Camera Placement)
+      // Lighting
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(5, 10, 5);
+      scene.add(light);
+
+      // First-Person Camera
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+      // Kart (Invisible Box for Camera)
       let kartGeometry = new THREE.BoxGeometry(1, 0.5, 2);
       let kartMaterial = new THREE.MeshBasicMaterial({ visible: false });
       kart = new THREE.Mesh(kartGeometry, kartMaterial);
       kart.position.y = 0.3;
       scene.add(kart);
-
-      // First-Person Camera
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       kart.add(camera);
       camera.position.set(0, 0.5, 0.2); // Camera inside the kart
 
-      // Track
-      let trackGeometry = new THREE.CircleGeometry(15, 64);
-      let trackMaterial = new THREE.MeshBasicMaterial({ color: 0x444444, side: THREE.DoubleSide });
-      track = new THREE.Mesh(trackGeometry, trackMaterial);
-      track.rotation.x = -Math.PI / 2;
-      scene.add(track);
-
-      // Lighting
-      let light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(5, 10, 5);
-      scene.add(light);
+      // Create a better track
+      createTrack();
 
       // Handle Window Resize
       window.addEventListener("resize", () => {
@@ -93,13 +77,45 @@
       animate();
     }
 
+    function createTrack() {
+      // Grass
+      const grassGeometry = new THREE.PlaneGeometry(50, 50);
+      const grassMaterial = new THREE.MeshBasicMaterial({ color: 0x008000, side: THREE.DoubleSide });
+      let grass = new THREE.Mesh(grassGeometry, grassMaterial);
+      grass.rotation.x = -Math.PI / 2;
+      scene.add(grass);
+
+      // Road (Loop track)
+      const roadGeometry = new THREE.TorusGeometry(10, 2, 16, 100);
+      const roadMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+      let road = new THREE.Mesh(roadGeometry, roadMaterial);
+      road.rotation.x = -Math.PI / 2;
+      scene.add(road);
+
+      // Curbs
+      const curbGeometry = new THREE.TorusGeometry(10.5, 0.3, 16, 100);
+      const curbMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      let curb = new THREE.Mesh(curbGeometry, curbMaterial);
+      curb.rotation.x = -Math.PI / 2;
+      scene.add(curb);
+
+      // Walls
+      const wallMaterial = new THREE.MeshBasicMaterial({ color: 0x666666 });
+      for (let i = 0; i < 10; i++) {
+        let angle = (i / 10) * Math.PI * 2;
+        let wall = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 2), wallMaterial);
+        wall.position.set(Math.cos(angle) * 11, 0.5, Math.sin(angle) * 11);
+        scene.add(wall);
+      }
+    }
+
     function animate() {
       requestAnimationFrame(animate);
 
       // Movement
       if (keys["ArrowUp"] || keys["mobileUp"]) speed = Math.min(speed + acceleration, maxSpeed);
       if (keys["ArrowDown"] || keys["mobileDown"]) speed = Math.max(speed - acceleration, -maxSpeed / 2);
-      if (!(keys["ArrowUp"] || keys["mobileUp"]) && !(keys["ArrowDown"] || keys["mobileDown"])) speed *= 0.98; // Natural deceleration
+      if (!(keys["ArrowUp"] || keys["mobileUp"]) && !(keys["ArrowDown"] || keys["mobileDown"])) speed *= 0.98;
 
       if (keys["ArrowLeft"] || keys["mobileLeft"]) kart.rotation.y += 0.04;
       if (keys["ArrowRight"] || keys["mobileRight"]) kart.rotation.y -= 0.04;
