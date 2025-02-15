@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D Kart Racer - Large Track</title>
+  <title>3D Kart Racer - Custom Track</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     body { margin: 0; overflow: hidden; background: black; }
@@ -39,7 +39,7 @@
 
   <script>
     let scene, camera, renderer, kart, speed = 0, maxSpeed = 1.5, acceleration = 0.07;
-    let trackRadius = 80; // Twice the size
+    let trackPath = []; // Stores track waypoints
     let keys = {};
 
     function init() {
@@ -60,12 +60,12 @@
       let kartGeometry = new THREE.BoxGeometry(1, 0.5, 2);
       let kartMaterial = new THREE.MeshBasicMaterial({ visible: false });
       kart = new THREE.Mesh(kartGeometry, kartMaterial);
-      kart.position.set(0, 0.3, -trackRadius + 5); // Start on track
+      kart.position.set(0, 0.3, -40); // Start on track
       scene.add(kart);
       kart.add(camera);
       camera.position.set(0, 0.5, 0.2); // Camera inside the kart
 
-      // Create a much larger track
+      // Create a custom track
       createTrack();
 
       // Handle Window Resize
@@ -86,26 +86,30 @@
       grass.rotation.x = -Math.PI / 2;
       scene.add(grass);
 
-      // Road (Twice as big)
-      const roadGeometry = new THREE.TorusGeometry(trackRadius, 7, 16, 100);
-      const roadMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
-      let road = new THREE.Mesh(roadGeometry, roadMaterial);
-      road.rotation.x = -Math.PI / 2;
-      scene.add(road);
+      // Custom racetrack shape
+      trackPath = [
+        { x: -50, z: -40 }, { x: -30, z: -60 }, { x: 0, z: -70 }, { x: 30, z: -60 },
+        { x: 50, z: -40 }, { x: 60, z: 0 }, { x: 50, z: 40 }, { x: 30, z: 60 },
+        { x: 0, z: 70 }, { x: -30, z: 60 }, { x: -50, z: 40 }, { x: -60, z: 0 }
+      ];
 
-      // Curbs
-      const curbGeometry = new THREE.TorusGeometry(trackRadius + 7.5, 1, 16, 100);
-      const curbMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-      let curb = new THREE.Mesh(curbGeometry, curbMaterial);
-      curb.rotation.x = -Math.PI / 2;
-      scene.add(curb);
+      let roadMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+
+      for (let i = 0; i < trackPath.length; i++) {
+        let next = trackPath[(i + 1) % trackPath.length];
+        let segment = new THREE.PlaneGeometry(20, Math.hypot(next.x - trackPath[i].x, next.z - trackPath[i].z));
+        let road = new THREE.Mesh(segment, roadMaterial);
+        road.rotation.x = -Math.PI / 2;
+        road.position.set((trackPath[i].x + next.x) / 2, 0.01, (trackPath[i].z + next.z) / 2);
+        road.lookAt(next.x, 0, next.z);
+        scene.add(road);
+      }
 
       // Walls around the track
       const wallMaterial = new THREE.MeshBasicMaterial({ color: 0x666666 });
-      for (let i = 0; i < 40; i++) {
-        let angle = (i / 40) * Math.PI * 2;
-        let wall = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 6), wallMaterial);
-        wall.position.set(Math.cos(angle) * (trackRadius + 10), 1.5, Math.sin(angle) * (trackRadius + 10));
+      for (let i = 0; i < trackPath.length; i++) {
+        let wall = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 10), wallMaterial);
+        wall.position.set(trackPath[i].x, 1.5, trackPath[i].z);
         scene.add(wall);
       }
     }
@@ -122,17 +126,16 @@
       if (keys["ArrowRight"] || keys["mobileRight"]) kart.rotation.y -= 0.04;
 
       // Move forward based on rotation
-      kart.position.x -= Math.sin(kart.rotation.y) * speed;
-      kart.position.z -= Math.cos(kart.rotation.y) * speed;
+      let newX = kart.position.x - Math.sin(kart.rotation.y) * speed;
+      let newZ = kart.position.z - Math.cos(kart.rotation.y) * speed;
 
-      // Prevent going off track
-      let distanceFromCenter = Math.sqrt(kart.position.x ** 2 + kart.position.z ** 2);
-      if (distanceFromCenter > trackRadius + 5) {
-        // Push kart back inside
-        let angle = Math.atan2(kart.position.z, kart.position.x);
-        kart.position.x = Math.cos(angle) * (trackRadius + 5);
-        kart.position.z = Math.sin(angle) * (trackRadius + 5);
-        speed *= -0.5; // Reduce speed on impact
+      // Collision detection: Stay within track boundaries
+      let closestDistance = Math.min(...trackPath.map(p => Math.hypot(newX - p.x, newZ - p.z)));
+      if (closestDistance > 25) {
+        speed *= -0.5; // Stop kart from leaving track
+      } else {
+        kart.position.x = newX;
+        kart.position.z = newZ;
       }
 
       renderer.render(scene, camera);
