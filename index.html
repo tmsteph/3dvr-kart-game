@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D Kart Racer - No Collision & Smooth Paths</title>
+  <title>3D Kart Racer - Gas on Right, Brake on Left</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     body { margin: 0; overflow: hidden; background: black; }
     .mobile-controls {
       display: flex;
-      justify-content: center;
-      gap: 10px;
+      justify-content: space-between;
       position: fixed;
       bottom: 10px;
       width: 100%;
+      padding: 0 10px;
     }
     .button {
       background: darkorange;
@@ -32,14 +32,13 @@
 <body>
   <div class="mobile-controls">
     <button class="button" id="leftBtn">←</button>
-    <button class="button" id="accelerateBtn">↑</button>
-    <button class="button" id="brakeBtn">↓</button>
+    <button class="button" id="brakeBtn">↓</button> <!-- Brake moved to the left -->
+    <button class="button" id="gasBtn">↑</button> <!-- Gas moved to the right -->
     <button class="button" id="rightBtn">→</button>
   </div>
 
   <script>
     let scene, camera, renderer, kart, speed = 0, maxSpeed = 2, acceleration = 0.1;
-    let trackPath = [];
     let keys = {};
 
     function init() {
@@ -53,7 +52,7 @@
       light.position.set(5, 10, 5);
       scene.add(light);
 
-      // First-Person Camera (Better Angle & Higher)
+      // Camera
       camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, 2.5, 2.5); 
 
@@ -66,9 +65,6 @@
       scene.add(kart);
       kart.add(camera);
 
-      // Create the fixed track
-      createTrack();
-
       // Handle Window Resize
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -77,42 +73,6 @@
       });
 
       animate();
-    }
-
-    function createTrack() {
-      // Grass (Darker for Better Contrast)
-      const grassGeometry = new THREE.PlaneGeometry(500, 500);
-      const grassMaterial = new THREE.MeshBasicMaterial({ color: 0x004400, side: THREE.DoubleSide });
-      let grass = new THREE.Mesh(grassGeometry, grassMaterial);
-      grass.rotation.x = -Math.PI / 2;
-      scene.add(grass);
-
-      // Track Layout (Now A Single Continuous Path)
-      trackPath = [
-        { x: -50, z: -40 }, { x: -30, z: -50 }, { x: 0, z: -60 }, { x: 30, z: -50 }, { x: 50, z: -30 },
-        { x: 60, z: 0 }, { x: 50, z: 30 }, { x: 30, z: 50 }, { x: 0, z: 60 }, { x: -30, z: 50 },
-        { x: -50, z: 30 }, { x: -60, z: 0 }
-      ];
-
-      let roadMaterial = new THREE.MeshBasicMaterial({ color: 0x222222 });
-
-      for (let i = 0; i < trackPath.length; i++) {
-        let next = trackPath[(i + 1) % trackPath.length];
-        let segment = new THREE.PlaneGeometry(20, Math.hypot(next.x - trackPath[i].x, next.z - trackPath[i].z));
-        let road = new THREE.Mesh(segment, roadMaterial);
-        road.rotation.x = -Math.PI / 2;
-        road.position.set((trackPath[i].x + next.x) / 2, 0.01, (trackPath[i].z + next.z) / 2);
-        road.lookAt(next.x, 0, next.z);
-        scene.add(road);
-      }
-
-      // Walls (Now Following the Track Properly)
-      const wallMaterial = new THREE.MeshBasicMaterial({ color: 0x666666 });
-      for (let i = 0; i < trackPath.length; i++) {
-        let wall = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 15), wallMaterial);
-        wall.position.set(trackPath[i].x, 1, trackPath[i].z);
-        scene.add(wall);
-      }
     }
 
     function animate() {
@@ -126,7 +86,7 @@
       if (keys["ArrowLeft"] || keys["mobileLeft"]) kart.rotation.y += 0.04;
       if (keys["ArrowRight"] || keys["mobileRight"]) kart.rotation.y -= 0.04;
 
-      // Move forward based on rotation (No collision restrictions)
+      // Move forward based on rotation
       kart.position.x -= Math.sin(kart.rotation.y) * speed;
       kart.position.z -= Math.cos(kart.rotation.y) * speed;
 
@@ -137,13 +97,13 @@
     document.addEventListener("keydown", (e) => keys[e.key] = true);
     document.addEventListener("keyup", (e) => keys[e.key] = false);
 
-    // Mobile Controls
+    // Mobile Controls (Gas on Right, Brake on Left)
     document.getElementById("leftBtn").addEventListener("touchstart", () => keys["mobileLeft"] = true);
     document.getElementById("leftBtn").addEventListener("touchend", () => keys["mobileLeft"] = false);
     document.getElementById("rightBtn").addEventListener("touchstart", () => keys["mobileRight"] = true);
     document.getElementById("rightBtn").addEventListener("touchend", () => keys["mobileRight"] = false);
-    document.getElementById("accelerateBtn").addEventListener("touchstart", () => keys["mobileUp"] = true);
-    document.getElementById("accelerateBtn").addEventListener("touchend", () => keys["mobileUp"] = false);
+    document.getElementById("gasBtn").addEventListener("touchstart", () => keys["mobileUp"] = true);
+    document.getElementById("gasBtn").addEventListener("touchend", () => keys["mobileUp"] = false);
     document.getElementById("brakeBtn").addEventListener("touchstart", () => keys["mobileDown"] = true);
     document.getElementById("brakeBtn").addEventListener("touchend", () => keys["mobileDown"] = false);
 
